@@ -13,11 +13,36 @@
 // Register Service Worker for PWA (only works when served via HTTP/HTTPS)
 if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js')
-      .then(reg => console.log('Service Worker registered'))
-      .catch(err => console.log('Service Worker registration failed:', err));
+    navigator.serviceWorker.register('/shape-tap-deluxe/sw.js')
+      .then(reg => {
+        console.log('Service Worker registered:', reg);
+      })
+      .catch(err => {
+        console.error('Service Worker registration failed:', err);
+      });
   });
 }
+
+// Add PWA install prompt handler
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  console.log('Install prompt available');
+});
+
+// You can trigger install with a button if needed
+window.installPWA = () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+      }
+      deferredPrompt = null;
+    });
+  }
+};
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
