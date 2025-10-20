@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "npx http-server -p 8000 -o",
     "start": "npx http-server -p 8000",
-    "serve": "npx http-server -p 8000 -c-1"
+    "serve": "npx http-server -p 8000 -c-1",
+    "generate-icons": "node generate-icons.js"
   },
   "keywords": [
     "game",
@@ -14,5 +15,8 @@
     "tap-game"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "canvas": "^3.2.0"
+  }
 }
