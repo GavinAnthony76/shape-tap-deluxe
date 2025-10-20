@@ -1,13 +1,13 @@
 // Service Worker for Shape Tap Deluxe PWA
-const CACHE_NAME = 'shape-tap-v1';
+const CACHE_NAME = 'shape-tap-v2';
 const urlsToCache = [
-  './',
-  './index.html',
-  './css/styles.css',
-  './js/game.js',
-  './manifest.json',
-  './assets/icon-192.png',
-  './assets/icon-512.png'
+  '/shape-tap-deluxe/',
+  '/shape-tap-deluxe/index.html',
+  '/shape-tap-deluxe/css/styles.css',
+  '/shape-tap-deluxe/js/game.js',
+  '/shape-tap-deluxe/manifest.json',
+  '/shape-tap-deluxe/assets/game-start.mp3',
+  '/shape-tap-deluxe/assets/winner-game-sound.mp3'
 ];
 
 // Install event - cache resources

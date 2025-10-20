@@ -649,46 +649,108 @@ function drawShape(s){
   ctx.translate(s.x, s.y);
   ctx.rotate(s.rot);
 
-  // Special effects
-  if(s.special === 'golden'){
-    ctx.shadowColor = '#ffd700';
-    ctx.shadowBlur = 20;
-    ctx.fillStyle = '#ffd700';
-  } else if(s.special === 'rainbow'){
-    const hue = (s.glowPhase * 60) % 360;
-    ctx.fillStyle = `hsl(${hue}, 80%, 60%)`;
-  } else if(s.special === 'bomb'){
-    ctx.shadowColor = '#ff3333';
-    ctx.shadowBlur = 15;
-    ctx.fillStyle = '#ff3333';
-  } else {
-    ctx.fillStyle = s.color;
-  }
-
   const r = s.size/2;
 
-  // Draw glow for special shapes
+  // Special effects
+  if(s.special === 'golden'){
+    // Golden glow
+    const goldGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+    goldGradient.addColorStop(0, '#fff9c4');
+    goldGradient.addColorStop(0.5, '#ffd700');
+    goldGradient.addColorStop(1, '#f9a825');
+    ctx.fillStyle = goldGradient;
+    ctx.shadowColor = '#ffd700';
+    ctx.shadowBlur = 30;
+  } else if(s.special === 'rainbow'){
+    const hue = (s.glowPhase * 60) % 360;
+    const rainbowGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+    rainbowGradient.addColorStop(0, `hsl(${hue}, 100%, 70%)`);
+    rainbowGradient.addColorStop(1, `hsl(${(hue + 60) % 360}, 100%, 60%)`);
+    ctx.fillStyle = rainbowGradient;
+    ctx.shadowColor = `hsl(${hue}, 100%, 60%)`;
+    ctx.shadowBlur = 25;
+  } else if(s.special === 'bomb'){
+    // Red pulsing bomb
+    const bombGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+    bombGradient.addColorStop(0, '#ff6b6b');
+    bombGradient.addColorStop(0.5, '#ff3333');
+    bombGradient.addColorStop(1, '#cc0000');
+    ctx.fillStyle = bombGradient;
+    ctx.shadowColor = '#ff3333';
+    ctx.shadowBlur = 20;
+  } else {
+    // Normal shapes with gradient
+    const gradient = ctx.createRadialGradient(-r/3, -r/3, 0, 0, 0, r);
+    const baseColor = s.color;
+    gradient.addColorStop(0, lightenColor(baseColor, 40));
+    gradient.addColorStop(0.7, baseColor);
+    gradient.addColorStop(1, darkenColor(baseColor, 20));
+    ctx.fillStyle = gradient;
+    ctx.shadowColor = baseColor;
+    ctx.shadowBlur = 8;
+  }
+
+  // Draw outer glow for special shapes
   if(s.special){
-    ctx.globalAlpha = 0.3 + Math.sin(s.glowPhase) * 0.2;
+    ctx.globalAlpha = 0.4 + Math.sin(s.glowPhase) * 0.3;
     ctx.beginPath();
-    ctx.arc(0, 0, r + 5, 0, TAU);
+    ctx.arc(0, 0, r + 8, 0, TAU);
     ctx.fill();
     ctx.globalAlpha = 1;
   }
 
+  // Main shape with stroke
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+  ctx.lineWidth = 2;
+
   switch(s.type){
     case 'circle':
-      ctx.beginPath(); ctx.arc(0,0,r,0,TAU); ctx.fill(); break;
+      ctx.beginPath();
+      ctx.arc(0,0,r,0,TAU);
+      ctx.fill();
+      ctx.stroke();
+      break;
     case 'square':
-      ctx.fillRect(-r,-r, s.size, s.size); break;
+      ctx.fillRect(-r,-r, s.size, s.size);
+      ctx.strokeRect(-r,-r, s.size, s.size);
+      break;
     case 'triangle':
-      poly(3, r); break;
+      poly(3, r);
+      ctx.fill();
+      ctx.stroke();
+      break;
     case 'pentagon':
-      poly(5, r); break;
+      poly(5, r);
+      ctx.fill();
+      ctx.stroke();
+      break;
     case 'star':
-      star(5, r, r*0.46); break;
+      star(5, r, r*0.46);
+      ctx.fill();
+      ctx.stroke();
+      break;
   }
+
   ctx.restore();
+}
+
+// Helper functions for color manipulation
+function lightenColor(color, percent) {
+  const num = parseInt(color.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = Math.min(255, (num >> 16) + amt);
+  const G = Math.min(255, (num >> 8 & 0x00FF) + amt);
+  const B = Math.min(255, (num & 0x0000FF) + amt);
+  return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
+}
+
+function darkenColor(color, percent) {
+  const num = parseInt(color.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = Math.max(0, (num >> 16) - amt);
+  const G = Math.max(0, (num >> 8 & 0x00FF) - amt);
+  const B = Math.max(0, (num & 0x0000FF) - amt);
+  return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
 }
 
 function drawPowerup(p){
@@ -1205,7 +1267,15 @@ function canvasPos(e){
   const rect = canvas.getBoundingClientRect();
   const clientX = (e.touches? e.touches[0].clientX : e.clientX);
   const clientY = (e.touches? e.touches[0].clientY : e.clientY);
-  return { x: clientX - rect.left, y: clientY - rect.top };
+
+  // Scale from display size to canvas size
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+
+  return {
+    x: (clientX - rect.left) * scaleX,
+    y: (clientY - rect.top) * scaleY
+  };
 }
 
 function handleTap(e){
