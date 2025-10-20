@@ -110,6 +110,7 @@ function playAudio(audioName) {
   } catch(e) { /* ignore */ }
 }
 
+// Professional sound system
 function ping(f=440, t=0.08, type='sine', gain=0.08){
   try{
     if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
@@ -127,10 +128,45 @@ function ping(f=440, t=0.08, type='sine', gain=0.08){
     o.stop(now+t+0.02);
   }catch(e){ /* ignore if user blocks audio */ }
 }
+
+// Enhanced sound effects
+const sounds = {
+  tap: () => ping(rng(800,1200), .05, 'sine', .12),
+  tapGolden: () => {
+    ping(1200, .08, 'sine', .15);
+    setTimeout(() => ping(1600, .06, 'sine', .1), 40);
+  },
+  tapBomb: () => {
+    ping(220, .15, 'sawtooth', .18);
+    setTimeout(() => ping(180, .1, 'square', .15), 50);
+  },
+  tapRainbow: () => {
+    for(let i=0; i<3; i++){
+      setTimeout(() => ping(600 + i*200, .04, 'sine', .08), i*30);
+    }
+  },
+  powerup: () => {
+    ping(880, .1, 'triangle', .12);
+    setTimeout(() => ping(1100, .12, 'triangle', .1), 60);
+  },
+  levelUp: () => {
+    const notes = [523, 659, 784, 1047];
+    notes.forEach((f, i) => setTimeout(() => ping(f, .1, 'triangle', .1), i*80));
+  },
+  combo: (level) => {
+    const freq = 440 + (level * 50);
+    ping(Math.min(freq, 1800), .06, 'sine', .1);
+  },
+  achievement: () => {
+    [523, 659, 784].forEach((f, i) => setTimeout(() => ping(f, .15, 'triangle', .12), i*100));
+  }
+};
+
 function chord(){
   ping(660, .07, 'triangle', .07);
   setTimeout(()=>ping(990,.07,'triangle',.05), 25);
 }
+
 function victorySound(){
   playAudio('gameOver');
 }
@@ -997,12 +1033,30 @@ function update(dt){
       }
     }
 
-    // bounce off edges
+    // bounce off edges with damping
     const r = s.size/2;
-    if(s.x < r){ s.x=r; s.vx = Math.abs(s.vx); }
-    if(s.x > canvas.width-r){ s.x=canvas.width-r; s.vx = -Math.abs(s.vx); }
-    if(s.y < r){ s.y=r; s.vy = Math.abs(s.vy); }
-    if(s.y > canvas.height-r){ s.y=canvas.height-r; s.vy = -Math.abs(s.vy); }
+    const dampingFactor = 0.8;
+
+    if(s.x < r){
+      s.x = r;
+      s.vx = Math.abs(s.vx) * dampingFactor;
+      s.vrot *= 0.9;
+    }
+    if(s.x > canvas.width-r){
+      s.x = canvas.width-r;
+      s.vx = -Math.abs(s.vx) * dampingFactor;
+      s.vrot *= 0.9;
+    }
+    if(s.y < r){
+      s.y = r;
+      s.vy = Math.abs(s.vy) * dampingFactor;
+      s.vrot *= 0.9;
+    }
+    if(s.y > canvas.height-r){
+      s.y = canvas.height-r;
+      s.vy = -Math.abs(s.vy) * dampingFactor;
+      s.vrot *= 0.9;
+    }
   }
 
   // Shape-to-shape collisions
@@ -1326,11 +1380,11 @@ function handleTap(e){
     if(pointInShape(x,y,s)){
       state.totalTaps++;
 
-      // Special shape handling
+      // Special shape handling with professional sounds
       if(s.special === 'golden'){
         makeExplosion(s.x,s.y,'#ffd700');
         addScore(30, true);
-        ping(880, .08, 'sine', .1);
+        sounds.tapGolden();
         vibrate(30);
         state.shapes.splice(i, 1);
         spawnShape(); // Replace
@@ -1350,14 +1404,15 @@ function handleTap(e){
           }
         }
         addScore(50, true);
-        ping(220, .15, 'sawtooth', .15);
+        sounds.tapBomb();
         vibrate(100);
+        state.screenShake = 12;
         for(let k=0; k<3; k++) spawnShape(); // Spawn replacements
       } else if(s.special === 'rainbow'){
         makeExplosion(s.x,s.y,s.color);
         addScore(20, true);
         morph(s);
-        ping(784, .06, 'triangle', .08);
+        sounds.tapRainbow();
         vibrate(20);
       } else {
         // Normal shape - check for critical hit (15% chance)
@@ -1372,8 +1427,11 @@ function handleTap(e){
           vibrate(25);
         } else {
           addScore(10);
-          ping(520 + state.combo*30, .06, 'sine', .06);
-          if(state.combo >= 5) vibrate(15);
+          sounds.tap();
+          if(state.combo >= 5){
+            sounds.combo(state.combo);
+            vibrate(15);
+          }
         }
       }
 
