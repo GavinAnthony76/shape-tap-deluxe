@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>Shape Tap Deluxe</title>
+  <meta name="description" content="A premium tap game with campaign mode, physics, and daily challenges">
+  <meta name="theme-color" content="#89f7fe">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+</head>
+<body>
+<div class="wrap">
+  <!-- Settings Panel -->
+  <div class="settings-panel">
+    <div class="mode-selector">
+      <button class="mode-btn active" data-mode="classic">Classic</button>
+      <button class="mode-btn" data-mode="endless">Endless</button>
+      <button class="mode-btn" data-mode="zen">Zen</button>
+      <button class="mode-btn" data-mode="speed">Speed Run</button>
+      <button class="mode-btn" data-mode="campaign">📖 Campaign</button>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Difficulty:</span>
+      <select id="difficulty">
+        <option value="easy">Easy</option>
+        <option value="medium" selected>Medium</option>
+        <option value="hard">Hard</option>
+        <option value="insane">Insane</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">🔊 Sound</span>
+      <input type="range" id="volume" min="0" max="100" value="50">
+      <span id="volumeVal">50%</span>
+    </div>
+  </div>
+
+  <div class="hud" id="hud">
+    <div class="pill big">Score: <span id="score">0</span></div>
+    <div class="pill big">Time: <span id="time">60</span>s</div>
+    <div class="pill">Combo: <span id="comboDisplay">0</span>x</div>
+    <div class="pill">Best: <span id="best">0</span></div>
+    <div class="pill">Level: <span id="level">1</span></div>
+    <div class="btns">
+      <button id="startBtn">▶ Start</button>
+      <button id="pauseBtn" class="secondary">⏸ Pause</button>
+      <button id="resetBtn" class="secondary">↻ Reset</button>
+      <button id="dailyChallengeBtn" class="secondary">📅 Daily</button>
+      <button id="statsBtn" class="secondary">📊 Stats</button>
+      <button id="shopBtn" class="secondary">🛒 Shop</button>
+    </div>
+    <div class="pill">💰 <span id="coinsDisplay">0</span></div>
+  </div>
+
+  <div style="position:relative; display:inline-block;">
+    <canvas id="game" width="480" height="768"></canvas>
+    <div class="combo-display" id="floatingCombo"></div>
+  </div>
+
+  <div class="hint">Tap shapes to morph them and earn points. Combos = faster taps! 🌀</div>
+</div>
+
+<!-- Game Over Modal -->
+<div class="modal" id="gameOverModal">
+  <div class="modal-content">
+    <h2>🎮 Game Over!</h2>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-value" id="finalScore">0</div>
+        <div class="stat-label">Final Score</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="finalTaps">0</div>
+        <div class="stat-label">Total Taps</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="finalCombo">0</div>
+        <div class="stat-label">Best Combo</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="finalAccuracy">0%</div>
+        <div class="stat-label">Accuracy</div>
+      </div>
+    </div>
+    <div class="modal-buttons">
+      <button id="playAgainBtn">🔄 Play Again</button>
+      <button id="shareBtn" class="secondary">📤 Share</button>
+      <button id="closeModalBtn" class="secondary">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Stats Dashboard Modal -->
+<div class="modal" id="statsModal">
+  <div class="modal-content">
+    <h2>📊 Statistics</h2>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-value" id="totalGames">0</div>
+        <div class="stat-label">Games Played</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="totalShapesTapped">0</div>
+        <div class="stat-label">Shapes Tapped</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="bestComboEver">0</div>
+        <div class="stat-label">Best Combo</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="avgScore">0</div>
+        <div class="stat-label">Avg Score</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="totalXP">0</div>
+        <div class="stat-label">Total XP</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="currentLevel">1</div>
+        <div class="stat-label">Player Level</div>
+      </div>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="xpProgress" style="width:0%"></div>
+    </div>
+    <div style="text-align:center; font-size:0.85rem; opacity:0.8; margin-top:5px;">
+      <span id="xpText">0 / 100 XP to next level</span>
+    </div>
+    <div class="modal-buttons">
+      <button id="closeStatsBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Achievement Toast -->
+<div class="achievement-toast" id="achievementToast">
+  <div class="achievement-title" id="achievementTitle"></div>
+  <div class="achievement-desc" id="achievementDesc"></div>
+</div>
+
+<!-- Shop Modal -->
+<div class="modal" id="shopModal">
+  <div class="modal-content">
+    <h2>🛒 Customization Shop</h2>
+    <div style="text-align:center; margin-bottom:15px;">
+      <div style="font-size:1.5rem; font-weight:800; color:var(--accent);">
+        💰 Coins: <span id="shopCoins">0</span>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-box" style="cursor:pointer;" id="buyTheme1">
+        <div class="stat-label">🌊 Ocean Theme</div>
+        <div class="stat-value" style="font-size:1.2rem;">50💰</div>
+      </div>
+      <div class="stat-box" style="cursor:pointer;" id="buyTheme2">
+        <div class="stat-label">🔥 Fire Theme</div>
+        <div class="stat-value" style="font-size:1.2rem;">50💰</div>
+      </div>
+      <div class="stat-box" style="cursor:pointer;" id="buyParticle1">
+        <div class="stat-label">⭐ Star Particles</div>
+        <div class="stat-value" style="font-size:1.2rem;">30💰</div>
+      </div>
+      <div class="stat-box" style="cursor:pointer;" id="buyParticle2">
+        <div class="stat-label">❤️ Heart Particles</div>
+        <div class="stat-value" style="font-size:1.2rem;">30💰</div>
+      </div>
+    </div>
+    <div style="text-align:center; margin-top:15px; font-size:0.9rem; opacity:0.8;">
+      Earn coins by playing games!
+    </div>
+    <div class="modal-buttons">
+      <button id="closeShopBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Campaign Modal -->
+<div class="modal" id="campaignModal">
+  <div class="modal-content">
+    <h2>📖 Campaign Mode</h2>
+    <div style="text-align:center; margin-bottom:10px; font-size:0.95rem; opacity:0.9;">
+      Complete levels to unlock new challenges!
+    </div>
+    <div class="level-grid" id="levelGrid"></div>
+    <div class="modal-buttons">
+      <button id="closeCampaignBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/game.js"></script>
+</body>
+</html>
