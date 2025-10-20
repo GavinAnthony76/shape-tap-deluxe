@@ -1364,6 +1364,20 @@ function handleTap(e){
 canvas.addEventListener('click', handleTap);
 canvas.addEventListener('touchstart', handleTap, {passive:false});
 
+// Prevent context menu and text selection on canvas
+canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+canvas.addEventListener('selectstart', (e) => e.preventDefault());
+canvas.addEventListener('touchend', (e) => e.preventDefault());
+canvas.addEventListener('touchmove', (e) => e.preventDefault());
+
+// Prevent long-press on entire document
+document.addEventListener('contextmenu', (e) => {
+  if (state.running) e.preventDefault();
+});
+document.addEventListener('selectstart', (e) => {
+  if (state.running) e.preventDefault();
+});
+
 // Controls
 startBtn.addEventListener('click', startGame);
 pauseBtn.addEventListener('click', ()=> {
